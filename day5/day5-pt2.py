@@ -45,8 +45,6 @@ def main(input_file_name):
                 stacks[stack_idx].append(line[pos])
             stack_idx += 1
 
-    # print(stacks)
-
     # Parse the move instructions
     instruction_lines = lines[NUMBER_LINE_INDEX + 1:]
     for line in instruction_lines:
