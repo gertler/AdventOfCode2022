@@ -20,12 +20,40 @@ class Tree:
             print("{}{} (dir)".format(padding, self.name))
             for child in self.children:
                 child.printRoot(padding + "|   ")
+    
+    def rootSize(self):
+        if len(self.children) == 0:
+            return self.size
+        else:
+            total = 0
+            for child in self.children:
+                total += child.rootSize()
+            return total
 
 
 def usage():
     print("Usage: {} [INPUT FILE]".format(sys.argv[0]))
     print("Finds the sum of the size of all directories that each have a max size of 100,000.\n")
     print("\t-h\tPrint this help message\n")
+
+
+def getAllDirSizes(root: Tree):
+    sizes = []
+    sizes.append(root.rootSize())
+
+    def getAllDirSizesRecur(rRoot: Tree):
+        nonlocal sizes
+        if len(rRoot.children) == 0:
+            return
+        sizes.append(rRoot.rootSize())
+        for child in rRoot.children:
+            getAllDirSizesRecur(child)
+        
+
+    for child in root.children:
+        getAllDirSizesRecur(child)
+    return sizes
+
 
 def main(input_file_name):
     input_file = open(input_file_name)
@@ -91,8 +119,14 @@ def main(input_file_name):
                 # Do nothing, just go to next line
                 continue
     
-    dir_tree.printRoot("")
-    # print("The number of characters processed before the start-of-packet marker is detected is {}".format(num_processed))
+    # dir_tree.printRoot("")
+
+    total_size = 0
+    sizes = getAllDirSizes(dir_tree)
+    sizes_under = filter(lambda x: x <= MAX_DIR_SIZE, sizes)
+    total_size = sum(sizes_under)
+
+    print("The total size of all directories (including overlap) of a maximum size of {} is {}".format(MAX_DIR_SIZE, total_size))
 
     input_file.close()
 
