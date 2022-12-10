@@ -44,7 +44,6 @@ def findTailPosFrom(head: Point, currTail: Point):
     return Point(currTail.x + x, currTail.y + y)
 
 
-
 def main(input_file_name):
     input_file = open(input_file_name)
     lines = input_file.readlines()
