@@ -2,35 +2,47 @@
 import sys
 import os
 
+# Globals
+correct_order = False
+
 def usage():
     print("Usage: {} [INPUT FILE]".format(sys.argv[0]))
     print("Find the sum of the indices for the pairs that are in the right order.\n")
     print("\t-h\tPrint this help message\n")
 
 
-def flattenNthArray(arrOrItem):
-    if isinstance(arrOrItem, list):
-        for item in arrOrItem:
-            yield from flattenNthArray(item)
-    else:
-        yield arrOrItem
+def verifyCorrectOrder(arr1, arr2) -> bool:
+    global correct_order
+    is_arr1 = hasattr(arr1, '__iter__')
+    is_arr2 = hasattr(arr2, '__iter__')
 
-
-def verifyCorrectOrder(arr1, arr2):
-    _arr1 = [x for x in arr1]
-    _arr2 = [x for x in arr2]
-    while len(_arr2) > 0:
-        if len(_arr1) == 0:
+    if is_arr1 and is_arr2:
+        zipped = list(zip(arr1, arr2))
+        zip_len = len(zipped)
+        for left, right in zipped:
+            is_done = verifyCorrectOrder(left, right)
+            if is_done:
+                return True
+        leftover_len1 = len(arr1[zip_len:])
+        leftover_len2 = len(arr2[zip_len:])
+        if leftover_len1 != leftover_len2:
+            correct_order = leftover_len1 < leftover_len2
             return True
-        item1 = _arr1.pop(0)
-        item2 = _arr2.pop(0)
-        if item1 == item2:
-            continue
-        return item1 < item2
-    return False
-
+    elif not is_arr1 and not is_arr2:
+        if arr1 != arr2:
+            correct_order = arr1 < arr2
+            return True
+    else:
+        is_done = False
+        if is_arr1:
+            is_done = verifyCorrectOrder(arr1, [arr2])
+        else:
+            is_done = verifyCorrectOrder([arr1], arr2)
+        if is_done:
+            return True
 
 def main(input_file_name):
+    global correct_order
     input_file = open(input_file_name)
     lines = input_file.readlines()
     input_file.close()
@@ -54,16 +66,16 @@ def main(input_file_name):
     idx = 1
     indices_sum = 0
     for pair in pairs:
-        flattened1 = list(flattenNthArray(pair[0]))
-        flattened2 = list(flattenNthArray(pair[1]))
-        print(flattened1)
-        print(flattened2)
-        correctOrder = verifyCorrectOrder(flattened1, flattened2)
-        print(correctOrder)
-        if correctOrder:
+        # print(pair[0])
+        # print(pair[1])
+        correct_order = False
+        verifyCorrectOrder(pair[0], pair[1])
+        # print(correct_order)
+        if correct_order:
             indices_sum += idx
         idx += 1
-        print("")
+        correct_order = False
+        # print("")
     
     print("The sum of the indices for the pairs that are in the right order is {}".format(indices_sum))
 
