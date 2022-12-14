@@ -8,7 +8,7 @@ MAX_TRIES = 100_000
 
 def usage():
     print("Usage: {} [INPUT FILE]".format(sys.argv[0]))
-    print("Find the number of units of sand that come to rest before infinitely falling.\n")
+    print("Find the number of units of sand that fall before the sand is fully blocked.\n")
     print("\t-h\tPrint this help message\n")
 
 
@@ -37,13 +37,16 @@ def simulate_1_grain(formation, sand_start):
 
 
 def simulate_sand(formation, sand_start):
+    def hasRock(pos):
+        return formation[pos[1]][pos[0]]
     settled = 0
-    curr_pos = sand_start
     for _ in range(MAX_TRIES):
         try:
             simulate_1_grain(formation, sand_start)
         except IndexError:
             return settled
+        if hasRock(sand_start):
+            break
         settled += 1
     return settled
 
@@ -75,7 +78,8 @@ def main(input_file_name):
     # [(503, 4), (502, 4), (502, 9), (494, 9)]
     # (503, 502), (4, 4)
     # (503, 501, -1), (4, 5, 1)
-    formation = [[False]*(width + 1) for _ in range(height + 1)]
+    width = 1000
+    formation = [[False]*(width) for _ in range(height + 1 + 2)]
     for rays in rocks:
         for i in range(len(rays) - 1):
             x_diff, y_diff = zip(*rays[i:i+2])
@@ -84,6 +88,8 @@ def main(input_file_name):
             for x in range(x_diff[0], x_diff[1] + x_step, x_step):
                 for y in range(y_diff[0], y_diff[1] + y_step, y_step):
                     formation[y][x] = True
+    # Cheat mode activated
+    formation[-1] = [True] * width
     
     # Print rock wall
     # for l in formation:
@@ -91,9 +97,9 @@ def main(input_file_name):
     #     print(''.join(line))
     
     sand_start = (500, 0)
-    restful_sand = simulate_sand(formation, sand_start)
+    restful_sand = simulate_sand(formation, sand_start) + 1
     
-    print("The number of units of sand that come to rest before it starts infinitely falling is {}".format(restful_sand))
+    print("The number of units of sand that come to rest before it reaches the start {}".format(restful_sand))
 
     
 
