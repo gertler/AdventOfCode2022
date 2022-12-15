@@ -51,7 +51,6 @@ def main(input_file_name):
         if dist_2_y_row > sensor.taxi_radius:
             continue
         x_delta = sensor.taxi_radius - dist_2_y_row
-        x_max = pos[0] + (sensor.taxi_radius - dist_2_y_row)
         for x in range(pos[0] - x_delta, pos[0] + x_delta + 1):
             no_possible_beacons.add((x, Y_ROW))
 
