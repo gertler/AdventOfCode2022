@@ -2,7 +2,6 @@
 import sys
 import os
 import re
-from itertools import filterfalse, tee
 import time
 
 # Globals
@@ -30,13 +29,21 @@ def taxiDistance(p1, p2):
 
 def find_gap_with_size(ranges, gap):
     s = sorted(ranges, key=lambda x: x[0])
+    # Quick check if gap exists at beginning
+    if s[0][0] == XY_MIN + 1:
+        return (True, XY_MIN)
+
     max_x = s[0][1]
-    for i in range(1, len(s) - 1):
+    for i in range(1, len(s)):
         if s[i][0] == max_x + gap + 1:
             return (True, max_x + 1)
         if s[i][1] < max_x:
             continue
         max_x = s[i][1]
+    
+    # Quick check if gap exists at end
+    if max_x == XY_MAX - 1:
+        return (True, XY_MAX)
     return (False, -1)
 
 def main(input_file_name):
@@ -57,9 +64,10 @@ def main(input_file_name):
         beacons.append(beacon)
         sensors.append(Sensor(sensor, taxi))
 
+    before = time.time()
     # Next, loop over every row
     for y in range(0, XY_MAX + 1):
-        if y % 100_000 == 0:
+        if y % 250_000 == 0:
             print(f"Checking y={y}...")
         # Grab the list of ranges for the covered cells by each sensor on the current row
         curr_ranges = []
@@ -74,16 +82,19 @@ def main(input_file_name):
         
         # Check if there is a gap of size 1 within the covered cells
         # If so, that must be our distress beacon
+        if len(curr_ranges) < 2:
+            continue
         found_gap, gap = find_gap_with_size(curr_ranges, 1)
         if found_gap:
             distress_beacon = (gap, y)
             break
-
+    
+    after = time.time()
+    print(f"Took {after - before} seconds")
     print(f"Distress beacon is at {distress_beacon}")
     tuning_frequency = distress_beacon[0] * XY_MAX + distress_beacon[1]
     print("The tuning frequency is {}.".format(tuning_frequency))
 
-    
 
 if __name__ == "__main__":
     # Check args:
