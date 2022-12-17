@@ -33,7 +33,7 @@ class Valve:
 
 def usage():
     print("Usage: {} [INPUT FILE]".format(sys.argv[0]))
-    print("Find how many positions in row y={} that cannot contain a beacon.\n".format(Y_ROW))
+    print("Find the most pressure that can be released going through the tunnels.\n")
     print("\t-h\tPrint this help message\n")
 
 
@@ -55,6 +55,8 @@ def findBestPath(valves, distances):
         if time_elapsed >= MINUTES_ALLOWED:
             return curr_potential
         potential = curr_valve.getPotential(time_elapsed)
+        if potential == 0:
+            return curr_potential
         path_potentials = [potential + curr_potential]
         pnv_sorted = sorted(possible_next_valves, key=lambda v: distances[curr_valve.name][v.name])
         for next_valve in pnv_sorted:
@@ -70,7 +72,7 @@ def findBestPath(valves, distances):
         dist = distances[start.name][valve.name]
         new_nonzero_valves = list(filter(lambda v: v != valve, nonzero_valves))
         potential = _findBestPathRecursive(valve, 0, new_nonzero_valves, dist)
-        print(f"Found best starting by going to valve {valve.name}: {potential}")
+        print(f"Found best by starting at valve {valve.name}: {potential}")
         best_potentials.append(potential)
     return max(best_potentials)
     
@@ -101,10 +103,10 @@ def main(input_file_name):
             distances[valve.name][conn.name] = TIME_2_MOVE
 
     # Traverse through the tunnels!
-    # We really only care about reaching valves with non-zero flow rates
-    # nonzero_valves = list(filter(lambda x: x.flow_rate > 0, valves.values()))
+    # Calculate distances from every valve to every other valve
     floyd_warshall(valves, distances)
 
+    # Run the algorithm
     most_pressure = findBestPath(valves, distances)
     print(f"The most pressure you can release is {most_pressure}")
 
