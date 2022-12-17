@@ -10,9 +10,10 @@ TEST_MODE = False
 MINUTES_ALLOWED = 30
 START_VALVE = "AA"
 TIME_2_MOVE = 1
+TIME_2_OPEN = 1
 
 class Valve:
-    def __init__(self, name, flow_rate, connection_str):
+    def __init__(self, name, flow_rate: int, connection_str):
         self.name = name
         self.flow_rate = flow_rate    
         self.connection_str = connection_str
@@ -21,11 +22,10 @@ class Valve:
     def setLeadsTo(self, connections):
         self.connections = connections
     
-    def getPotential(self, time_elapsed):
+    def getPotential(self, time_elapsed: int):
         if self.open:
             return 0
-        time_2_move, time_2_open = 1, 1
-        time_remaining = MINUTES_ALLOWED - time_elapsed - time_2_move - time_2_open
+        time_remaining = MINUTES_ALLOWED - time_elapsed - TIME_2_OPEN
         if time_remaining <= 0:
             return 0
         return self.flow_rate * time_remaining
@@ -48,9 +48,32 @@ def floyd_warshall(valves, distances):
 
 def findBestPath(valves, distances):
     start = valves[START_VALVE]
-    nonzero_valves = {k:v for k,v in valves.items() if v.flow_rate > 0}
+    nonzero_valves = [v for _,v in valves.items() if v.flow_rate > 0]
     time_remaining = MINUTES_ALLOWED
 
+    def _findBestPathRecursive(curr_valve: Valve, curr_potential: int, possible_next_valves: list, time_elapsed: int):
+        if time_elapsed >= MINUTES_ALLOWED:
+            return curr_potential
+        potential = curr_valve.getPotential(time_elapsed)
+        path_potentials = [potential + curr_potential]
+        pnv_sorted = sorted(possible_next_valves, key=lambda v: distances[curr_valve.name][v.name])
+        for next_valve in pnv_sorted:
+            dist = distances[curr_valve.name][next_valve.name]
+            new_nonzero_valves = list(filter(lambda v: v != next_valve, pnv_sorted))
+            new_time_elapsed = time_elapsed + dist + TIME_2_OPEN
+            path_potential = _findBestPathRecursive(next_valve, potential + curr_potential, new_nonzero_valves, new_time_elapsed)
+            path_potentials.append(path_potential)
+        return max(path_potentials)
+
+    best_potentials = []
+    for valve in nonzero_valves:
+        dist = distances[start.name][valve.name]
+        new_nonzero_valves = list(filter(lambda v: v != valve, nonzero_valves))
+        potential = _findBestPathRecursive(valve, 0, new_nonzero_valves, dist)
+        print(f"Found best starting by going to valve {valve.name}: {potential}")
+        best_potentials.append(potential)
+    return max(best_potentials)
+    
 
 def main(input_file_name):
     input_file = open(input_file_name)
@@ -81,9 +104,8 @@ def main(input_file_name):
     # We really only care about reaching valves with non-zero flow rates
     # nonzero_valves = list(filter(lambda x: x.flow_rate > 0, valves.values()))
     floyd_warshall(valves, distances)
-    findBestPath(valves, distances)
 
-    most_pressure = 0
+    most_pressure = findBestPath(valves, distances)
     print(f"The most pressure you can release is {most_pressure}")
 
 
