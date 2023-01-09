@@ -7,7 +7,7 @@ import math
 # Globals
 PART2 = False
 TEST_MODE = False
-MINUTES_ALLOWED = 30
+MINUTES_ALLOWED = 26
 START_VALVE = "AA"
 TIME_2_MOVE = 1
 TIME_2_OPEN = 1
@@ -17,20 +17,27 @@ class Valve:
         self.name = name
         self.flow_rate = flow_rate    
         self.connection_str = connection_str
+        self.open = False
     
     def setLeadsTo(self, connections):
         self.connections = connections
     
     def getPotential(self, time_elapsed: int):
+        if self.open:
+            return 0
         time_remaining = MINUTES_ALLOWED - time_elapsed - TIME_2_OPEN
         if time_remaining <= 0:
             return 0
         return self.flow_rate * time_remaining
 
+class Path:
+    def __init__(self, potential: int, path: list):
+        self.potential = potential
+        self.path = path
 
 def usage():
     print("Usage: {} [INPUT FILE]".format(sys.argv[0]))
-    print("Find the most pressure that can be released going through the tunnels.\n")
+    print("With an elephant helping, find the most pressure that can be released going through the tunnels.\n")
     print("\t-h\tPrint this help message\n")
 
 
@@ -47,13 +54,15 @@ def findBestPath(valves, distances):
     start = valves[START_VALVE]
     nonzero_valves = [v for _,v in valves.items() if v.flow_rate > 0]
 
-    def _findBestPathRecursive(curr_valve: Valve, curr_potential: int, possible_next_valves: list, time_elapsed: int):
+    def _findBestPathRecursive(curr_valve: Valve, curr_potential: int, possible_next_valves: list, time_elapsed: int, path_2_here: list):
         if time_elapsed >= MINUTES_ALLOWED:
             return curr_potential
         potential = curr_valve.getPotential(time_elapsed)
         if time_elapsed > 0 and potential == 0:
             return curr_potential
-        path_potentials = [potential + curr_potential]
+        # path_potentials = [potential + curr_potential]
+
+        paths = [Path(potential + curr_potential, path_2_here + [curr_valve])]
         pnv_sorted = sorted(possible_next_valves, key=lambda v: distances[curr_valve.name][v.name])
         for next_valve in pnv_sorted:
             dist = distances[curr_valve.name][next_valve.name]
@@ -63,7 +72,7 @@ def findBestPath(valves, distances):
             path_potentials.append(path_potential)
         return max(path_potentials)
 
-    potential = _findBestPathRecursive(start, 0, nonzero_valves, -TIME_2_OPEN)
+    potential = _findBestPathRecursive(start, 0, nonzero_valves, -TIME_2_OPEN, [])
     return potential
     
 
@@ -93,10 +102,9 @@ def main(input_file_name):
             distances[valve.name][conn.name] = TIME_2_MOVE
 
     # Traverse through the tunnels!
-    # Calculate distances from every valve to every other valve
+    # We really only care about reaching valves with non-zero flow rates
     floyd_warshall(valves, distances)
 
-    # Run the algorithm
     most_pressure = findBestPath(valves, distances)
     print(f"The most pressure you can release is {most_pressure}")
 
